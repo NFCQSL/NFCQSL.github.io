@@ -51,10 +51,12 @@
     })
     .catch((error) => {
       document.getElementById('content').innerHTML =
-        `<p>加载指南失败：${String(error)}</p>
+        `<p>加载指南失败：${String(error)}</p>`;
       console.error('加载失败:', error);
     });
 </script>
+
+
 
 </body>
 </html>
