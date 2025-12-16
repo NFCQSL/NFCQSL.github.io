@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>业余无线电紧急避险指南</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        #content {
+            margin: 20px;
+        }
+        header {
+            text-align: center;
+            margin-top: 20px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>业余无线电紧急避险指南</h1>
+    </header>
+
+    <div id="content">
+        <!-- Markdown content will be injected here -->
+        <p>加载中...</p>
+    </div>
+
+    <footer>
+        <p>&copy; 业余无线电紧急避险指南 2025</p>
+    </footer>
+
+<script>
+  fetch('./guide.md', { cache: 'no-store' })
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      }
+      return response.text();
+    })
+    .then((md) => {
+      document.getElementById('content').innerHTML = marked.parse(md);
+    })
+    .catch((error) => {
+      document.getElementById('content').innerHTML =
+        `<p>加载指南失败：${String(error)}</p>
+      console.error('加载失败:', error);
+    });
+</script>
+
+</body>
+</html>
