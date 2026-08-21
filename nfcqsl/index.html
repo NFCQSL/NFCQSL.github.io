@@ -3,286 +3,718 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NFC QSL Card Writer/Reader</title>
+  <meta name="theme-color" content="#102a2e">
+  <meta name="description" content="在支持 Web NFC 的手机上读写 NFCQSL 卡片。">
+  <title>NFCQSL · NFC QSL Card Reader & Writer</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
+    :root {
+      color-scheme: light;
+      --ink: #173136;
+      --ink-soft: #5c6f72;
+      --paper: #fffdf8;
+      --canvas: #edf3ef;
+      --line: #d7e0dc;
+      --brand: #0b6b63;
+      --brand-dark: #07524d;
+      --brand-pale: #dff2eb;
+      --danger: #a83c32;
+      --danger-pale: #fff0ed;
+      --success: #18734f;
+      --success-pale: #e7f5ed;
+      --shadow: 0 20px 50px rgba(21, 54, 52, 0.09);
     }
-    .container {
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(233, 162, 59, 0.15), transparent 26rem),
+        linear-gradient(180deg, #f5f8f4 0%, var(--canvas) 100%);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    button, input, select { font: inherit; }
+    button { touch-action: manipulation; }
+    h1, h2, p { margin-top: 0; }
+
+    .page-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      gap: 28px;
+      align-items: end;
+      padding: clamp(28px, 5vw, 56px);
+      border-radius: 30px;
+      background: #102a2e;
+      color: #f7fbf7;
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      right: -110px;
+      top: -120px;
+      border: 42px solid rgba(121, 211, 187, 0.12);
+      border-radius: 50%;
+      box-shadow: 0 0 0 42px rgba(121, 211, 187, 0.05);
+      pointer-events: none;
+    }
+
+    .eyebrow, .card-kicker {
+      margin-bottom: 8px;
+      color: #8fd9c6;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 720px;
+      margin-bottom: 14px;
+      font-size: clamp(2.25rem, 7vw, 4.8rem);
+      font-weight: 760;
+      letter-spacing: -0.055em;
+      line-height: 0.98;
+    }
+
+    .hero-copy {
+      max-width: 640px;
+      margin-bottom: 0;
+      color: #c9d9d7;
+      font-size: clamp(1rem, 2vw, 1.12rem);
+    }
+
+    .support-panel {
+      position: relative;
+      z-index: 1;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(10px);
+    }
+
+    .support-label {
+      margin-bottom: 10px;
+      color: #a9bfbc;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .support-title {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 7px;
+      font-weight: 750;
+    }
+
+    .support-dot {
+      width: 10px;
+      height: 10px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #98aaa8;
+      box-shadow: 0 0 0 5px rgba(152, 170, 168, 0.14);
+    }
+
+    .support-panel[data-state="supported"] .support-dot {
+      background: #65d0a8;
+      box-shadow: 0 0 0 5px rgba(101, 208, 168, 0.14);
+    }
+
+    .support-panel[data-state="unsupported"] .support-dot {
+      background: #ffb65e;
+      box-shadow: 0 0 0 5px rgba(255, 182, 94, 0.14);
+    }
+
+    .support-detail {
+      margin-bottom: 0;
+      color: #bed0cd;
+      font-size: 0.88rem;
+    }
+
+    .how-to {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .step {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-height: 76px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .step-number {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--brand-pale);
+      color: var(--brand-dark);
+      font-weight: 800;
+    }
+
+    .step strong, .step span { display: block; }
+    .step span { color: var(--ink-soft); font-size: 0.82rem; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.75fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      padding: clamp(22px, 4vw, 34px);
+      border: 1px solid rgba(23, 49, 54, 0.08);
+      border-radius: 24px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      display: flex;
+      gap: 18px;
+      align-items: start;
+      justify-content: space-between;
+      margin-bottom: 26px;
+    }
+
+    .card-kicker { color: var(--brand); }
+
+    h2 {
+      margin-bottom: 6px;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+      letter-spacing: -0.035em;
+    }
+
+    .card-description {
+      margin-bottom: 0;
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+    }
+
+    .size-badge {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #eef3f0;
+      color: var(--ink-soft);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    .size-badge.over-limit { background: var(--danger-pale); color: var(--danger); }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 17px 16px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label {
       display: flex;
       justify-content: space-between;
+      margin-bottom: 7px;
+      color: #27454a;
+      font-size: 0.86rem;
+      font-weight: 720;
     }
-    .column {
-      width: 48%;
-    }
-    .form-group {
-      margin-bottom: 10px;
-    }
-    input, select, button {
+
+    .example { color: #819093; font-size: 0.76rem; font-weight: 500; }
+
+    input, select {
       width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      font-size: 14px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
+      min-height: 48px;
+      padding: 11px 13px;
+      border: 1px solid #cbd7d3;
+      border-radius: 11px;
+      outline: none;
+      background: #fff;
+      color: var(--ink);
+      transition: border-color 150ms ease, box-shadow 150ms ease;
     }
-    .output {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #f0f0f0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+
+    input::placeholder { color: #9aa7a7; opacity: 1; }
+    input:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(11, 107, 99, 0.12); }
+
+    .form-note {
+      margin: 18px 0;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #f1f5f2;
+      color: var(--ink-soft);
+      font-size: 0.84rem;
     }
-    .status {
-      margin-top: 10px;
-      font-size: 14px;
-      color: green;
+
+    .action-row { display: flex; gap: 10px; align-items: stretch; }
+
+    .button {
+      display: inline-flex;
+      min-height: 50px;
+      flex: 1;
+      gap: 9px;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--brand);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 760;
+      transition: background 150ms ease, transform 150ms ease, opacity 150ms ease;
     }
-    .error {
-      color: red;
+
+    .button:hover:not(:disabled) { background: var(--brand-dark); transform: translateY(-1px); }
+    .button:focus-visible { outline: 3px solid rgba(233, 162, 59, 0.65); outline-offset: 3px; }
+    .button:disabled { cursor: not-allowed; opacity: 0.48; }
+
+    .button.secondary {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--ink);
     }
-    .default-value {
-      color: #ccc;
+
+    .button.secondary:hover:not(:disabled) { background: #f0f4f1; }
+
+    .button.danger {
+      margin-top: 12px;
+      border: 1px solid #e7bbb4;
+      background: transparent;
+      color: var(--danger);
     }
-    .debug-window {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #fff3cd;
-      border: 1px solid #ffc107;
+
+    .button.danger:hover:not(:disabled) { background: var(--danger-pale); }
+
+    .operation-status {
+      margin-top: 14px;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #f5f7f5;
+    }
+
+    .operation-status strong, .operation-status span { display: block; }
+    .operation-status strong { margin-bottom: 2px; font-size: 0.88rem; }
+    .operation-status span { color: var(--ink-soft); font-size: 0.8rem; }
+    .operation-status.working { border-color: #efd099; background: #fff8e8; }
+    .operation-status.success { border-color: #b9dfca; background: var(--success-pale); }
+    .operation-status.success strong { color: var(--success); }
+    .operation-status.error { border-color: #e8c1bb; background: var(--danger-pale); }
+    .operation-status.error strong { color: var(--danger); }
+
+    .read-card { position: sticky; top: 18px; }
+
+    .read-output {
+      min-height: 220px;
+      max-height: 480px;
+      margin: 18px 0 0;
+      padding: 16px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #13272a;
+      color: #d9ebe6;
+      font: 0.82rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .lock-note { margin: 12px 2px 0; color: var(--danger); font-size: 0.78rem; }
+    .footer-note { margin: 22px 0 0; color: #748487; font-size: 0.78rem; text-align: center; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 860px) {
+      .hero, .workspace { grid-template-columns: 1fr; }
+      .how-to { grid-template-columns: 1fr; }
+      .step { min-height: 0; }
+      .read-card { position: static; }
+    }
+
+    @media (max-width: 560px) {
+      .page-shell { width: min(100% - 20px, 1180px); padding: 10px 0 32px; }
+      .hero { padding: 28px 22px; border-radius: 22px; }
+      .support-panel { padding: 16px; }
+      .how-to { margin: 12px 0; }
+      .card { padding: 22px 16px; border-radius: 18px; }
+      .card-header { flex-direction: column; gap: 10px; margin-bottom: 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .action-row { flex-direction: column; }
+      .button.secondary { flex: 1; }
+      .read-output { min-height: 180px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
     }
   </style>
 </head>
-<body>
-
-  <div class="container">
-    <!-- Left: Write card -->
-    <div class="column">
-      <h2>Write QSL Card</h2>
-      
-      <div class="form-group">
-        <label for="cfm">CFM:</label>
-        <select id="cfm">
-          <option value="Our QSO">Our QSO</option>
-          <option value="Your SWL Report">Your SWL Report</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label for="toRadio">To Radio (Callsign):</label>
-        <input type="text" id="toRadio" placeholder="AB3DEF">
+<body lang="zh-CN">
+  <main class="page-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">NFC · QSL</p>
+        <h1>一碰，交换空中相遇。</h1>
+        <p class="hero-copy">为 NFCQSL 卡写入联络信息，或读取已经发行的卡片。所有数据只在当前设备与 NFC 标签之间处理。</p>
       </div>
 
-      <div class="form-group">
-        <label for="date">DATE:</label>
-        <input type="date" id="date" value="2024-12-06">
-      </div>
+      <aside class="support-panel" id="supportPanel" data-state="checking" aria-live="polite">
+        <p class="support-label">当前设备检测</p>
+        <div class="support-title">
+          <span class="support-dot" aria-hidden="true"></span>
+          <span id="supportTitle">正在检查 Web NFC…</span>
+        </div>
+        <p class="support-detail" id="supportDetail">检查浏览器接口与安全连接。</p>
+      </aside>
+    </header>
 
-      <div class="form-group">
-        <label for="time">TIME:</label>
-        <input type="time" id="time" value="14:30">
-      </div>
+    <section class="how-to" aria-label="NFC 操作顺序">
+      <div class="step"><span class="step-number">1</span><div><strong>先点操作按钮</strong><span>写入或读取都从按钮开始</span></div></div>
+      <div class="step"><span class="step-number">2</span><div><strong>允许 NFC 权限</strong><span>按浏览器提示开启并授权</span></div></div>
+      <div class="step"><span class="step-number">3</span><div><strong>再把卡贴近手机</strong><span>贴住 NFC 感应区，直到显示成功</span></div></div>
+    </section>
 
-      <div class="form-group">
-        <label for="freq">Freq (MHz):</label>
-        <input type="text" id="freq" placeholder="1420">
-      </div>
+    <section class="workspace">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <p class="card-kicker">Write</p>
+            <h2>写入 QSL 卡</h2>
+            <p class="card-description">填写需要保存的信息，点击写入后再贴卡。示例文字不会自动写入。</p>
+          </div>
+          <span class="size-badge" id="sizeBadge"><span id="dataSize">0</span> / 504 B</span>
+        </div>
 
-      <div class="form-group">
-        <label for="mode">Mode:</label>
-        <input type="text" id="mode">
-      </div>
+        <form id="qslForm" novalidate>
+          <div class="form-grid">
+            <div class="field full">
+              <label for="cfm">确认类型 <span class="example">请选择，允许留空</span></label>
+              <select id="cfm">
+                <option value="" selected>请选择确认类型</option>
+                <option value="Our QSO">Our QSO</option>
+                <option value="Your SWL Report">Your SWL Report</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="toRadio">对方呼号 <span class="example">例如 AB3DEF</span></label>
+              <input type="text" id="toRadio" placeholder="AB3DEF" autocomplete="off" autocapitalize="characters">
+            </div>
+            <div class="field">
+              <label for="mode">模式 <span class="example">例如 SSB</span></label>
+              <input type="text" id="mode" placeholder="SSB" autocomplete="off" autocapitalize="characters">
+            </div>
+            <div class="field">
+              <label for="date">日期 <span class="example">例如 2026-08-21</span></label>
+              <input type="date" id="date">
+            </div>
+            <div class="field">
+              <label for="time">时间 <span class="example">当地时间，不含时区</span></label>
+              <input type="time" id="time">
+            </div>
+            <div class="field">
+              <label for="freq">频率（MHz）<span class="example">例如 14.270</span></label>
+              <input type="text" id="freq" placeholder="14.270" inputmode="decimal" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="rst">RST <span class="example">例如 59</span></label>
+              <input type="text" id="rst" placeholder="59" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="rig">设备 RIG <span class="example">例如 IC-705</span></label>
+              <input type="text" id="rig" placeholder="IC-705" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="pwr">功率 PWR <span class="example">例如 10W</span></label>
+              <input type="text" id="pwr" placeholder="10W" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="ant">天线 ANT <span class="example">例如 Dipole</span></label>
+              <input type="text" id="ant" placeholder="Dipole" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="qth">位置 QTH <span class="example">城市或网格</span></label>
+              <input type="text" id="qth" placeholder="Beijing / OM89" autocomplete="off">
+            </div>
+            <div class="field full">
+              <label for="op">操作员 OP <span class="example">姓名或昵称</span></label>
+              <input type="text" id="op" placeholder="Operator" autocomplete="off">
+            </div>
+          </div>
 
-      <div class="form-group">
-        <label for="rst">RST:</label>
-        <input type="text" id="rst" placeholder="你的信号59+,呼号再过来一遍">
-      </div>
+          <p class="form-note">未填写的项目会保存为空字符串。灰色示例仅用于提示，不会成为卡片数据。</p>
+          <button class="button" id="writeButton" type="submit">写入 NFCQSL 卡</button>
+          <div class="operation-status" id="writeStatus" role="status" aria-live="polite">
+            <strong>尚未写入</strong><span>填写完成后点击按钮，再将卡贴近手机。</span>
+          </div>
+        </form>
+      </article>
 
-      <div class="form-group">
-        <label for="rig">RIG:</label>
-        <input type="text" id="rig" placeholder="火花发射机">
-      </div>
+      <article class="card read-card">
+        <div class="card-header">
+          <div>
+            <p class="card-kicker">Read</p>
+            <h2>读取 QSL 卡</h2>
+            <p class="card-description">兼容此前发行的 NFCQSL legacy v1 卡片。</p>
+          </div>
+        </div>
 
-      <div class="form-group">
-        <label for="pwr">PWR:</label>
-        <input type="text" id="pwr" placeholder="🐢">
-      </div>
+        <div class="action-row">
+          <button class="button" id="scanButton" type="button">开始读取</button>
+          <button class="button secondary" id="cancelScanButton" type="button" hidden>取消</button>
+        </div>
+        <div class="operation-status" id="scanStatus" role="status" aria-live="polite">
+          <strong>尚未读取</strong><span>点击按钮后，再将卡贴近手机 NFC 感应区。</span>
+        </div>
+        <pre class="read-output" id="readData" aria-label="读取到的卡片数据">等待读取卡片…</pre>
+        <div id="lockArea" hidden>
+          <button class="button danger" id="lockButton" type="button">确认数据无误，将卡设为只读</button>
+          <p class="lock-note">锁卡通常不可逆。点击后还需要再次将同一张卡贴近手机。</p>
+        </div>
+      </article>
+    </section>
 
-      <div class="form-group">
-        <label for="ant">ANT:</label>
-        <input type="text" id="ant" placeholder="长线加天调">
-      </div>
-
-      <div class="form-group">
-        <label for="qth">QTH:</label>
-        <input type="text" id="qth">
-      </div>
-
-      <div class="form-group">
-        <label for="op">OP (Operator):</label>
-        <input type="text" id="op" placeholder="新人，A类考试没报上">
-      </div>
-
-      <button id="writeButton">Write QSL Card</button>
-      
-      <div class="output">
-        <h3>Write Status:</h3>
-        <p id="writeStatus">Not attempted yet.</p>
-      </div>
-    </div>
-
-    <!-- Right: Read card -->
-    <div class="column">
-      <h2>Read QSL Card</h2>
-      
-      <button id="scanButton">Scan NFC Tag</button>
-
-      <div class="output">
-        <h3>Read Data:</h3>
-        <pre id="readData">No data read yet.</pre>
-      </div>
-
-      <div class="output">
-        <h3>Scan Status:</h3>
-        <p id="scanStatus">Not attempted yet.</p>
-        <p id="errorStatus" class="error">Error: No error.</p>
-      </div>
-
-      <button id="lockButton" style="display:none;">确认数据无误，锁卡</button>
-    </div>
-  </div>
+    <p class="footer-note">NFCQSL legacy v1 · Web NFC 需要 HTTPS、安全的顶层页面和用户授权</p>
+  </main>
 
   <script>
+    const qslForm = document.getElementById("qslForm");
     const writeButton = document.getElementById("writeButton");
     const scanButton = document.getElementById("scanButton");
+    const cancelScanButton = document.getElementById("cancelScanButton");
     const lockButton = document.getElementById("lockButton");
+    const lockArea = document.getElementById("lockArea");
     const writeStatusElement = document.getElementById("writeStatus");
     const scanStatusElement = document.getElementById("scanStatus");
     const readDataElement = document.getElementById("readData");
-    const errorStatusElement = document.getElementById("errorStatus");
+    const supportPanel = document.getElementById("supportPanel");
+    const supportTitle = document.getElementById("supportTitle");
+    const supportDetail = document.getElementById("supportDetail");
+    const dataSizeElement = document.getElementById("dataSize");
+    const sizeBadge = document.getElementById("sizeBadge");
 
-    let isScanning = false;  // Flag to control the scanning process
+    const hasWebNfc = "NDEFReader" in window;
+    const canUseWebNfc = window.isSecureContext && hasWebNfc;
+    const canLockTag = canUseWebNfc && "makeReadOnly" in NDEFReader.prototype;
+    let scanController = null;
 
-    const dataToString = (dataView) => {
-      const decoder = new TextDecoder('utf-8');
-      return decoder.decode(dataView);
+    const setStatus = (element, state, title, detail) => {
+      element.className = `operation-status ${state}`.trim();
+      element.querySelector("strong").textContent = title;
+      element.querySelector("span").textContent = detail;
     };
 
-    const calculateDataSize = (data) => {
-      // Calculate JSON string size in bytes (approximate)
-      const jsonString = JSON.stringify(data);
-      return new TextEncoder().encode(jsonString).length;
+    const describeError = (error) => {
+      const messages = {
+        AbortError: "操作已取消。",
+        NotAllowedError: "NFC 权限未授予，或标签不允许这项操作。",
+        NotSupportedError: "设备没有可用的 NFC 功能，或当前标签不受支持。",
+        NotReadableError: "NFC 暂时不可用，请确认手机已开启 NFC 并保持页面在前台。",
+        NetworkError: "操作过程中卡片离开了感应区，请贴稳后重试。",
+        InvalidStateError: "请保持页面可见并在当前浏览器标签页中操作。"
+      };
+      return messages[error.name] || error.message || "发生未知错误，请重试。";
     };
 
-    // Write to NFC
-    writeButton.addEventListener("click", async () => {
+    const updateSupportPanel = () => {
+      if (!window.isSecureContext) {
+        supportPanel.dataset.state = "unsupported";
+        supportTitle.textContent = "当前连接无法使用 Web NFC";
+        supportDetail.textContent = "请通过 HTTPS 打开此页面。浏览器不会在不安全连接中开放 NFC。";
+      } else if (!hasWebNfc) {
+        supportPanel.dataset.state = "unsupported";
+        supportTitle.textContent = "当前浏览器不支持 Web NFC";
+        supportDetail.textContent = "建议使用带 NFC 功能的 Android 手机和最新版 Chrome 浏览器。";
+      } else {
+        supportPanel.dataset.state = "supported";
+        supportTitle.textContent = "浏览器支持 Web NFC";
+        supportDetail.textContent = "是否具备 NFC 硬件且已开启，需要点击操作按钮后由手机进一步确认。";
+      }
+      writeButton.disabled = !canUseWebNfc;
+      scanButton.disabled = !canUseWebNfc;
+    };
+
+    const dataToString = (dataView) => new TextDecoder("utf-8").decode(dataView);
+
+    // legacy v1 字段名、类型与顺序不得改变。
+    const collectQslData = () => {
       const cfm = document.getElementById("cfm").value;
-      const toRadio = document.getElementById("toRadio").value || "AB3DEF";
+      const toRadio = document.getElementById("toRadio").value;
       const date = document.getElementById("date").value;
       const time = document.getElementById("time").value;
-      const freq = document.getElementById("freq").value || "1420";
+      const freq = document.getElementById("freq").value;
       const mode = document.getElementById("mode").value;
-      const rst = document.getElementById("rst").value || "你的信号59+,呼号再过来一遍";
-      const rig = document.getElementById("rig").value || "火花发射机";
-      const pwr = document.getElementById("pwr").value || "🐢";
-      const ant = document.getElementById("ant").value || "长线加天调";
+      const rst = document.getElementById("rst").value;
+      const rig = document.getElementById("rig").value;
+      const pwr = document.getElementById("pwr").value;
+      const ant = document.getElementById("ant").value;
       const qth = document.getElementById("qth").value;
-      const op = document.getElementById("op").value || "新人，A类考试没报上";
+      const op = document.getElementById("op").value;
 
-      // Create JSON object for the QSL card data
-      const qslData = {
-        cfm,
-        toRadio,
-        date,
-        time,
-        freq,
-        mode,
-        rst,
-        rig,
-        pwr,
-        ant,
-        qth,
-        op
-      };
+      return { cfm, toRadio, date, time, freq, mode, rst, rig, pwr, ant, qth, op };
+    };
 
-      // Check the size of the JSON data
-      const dataSize = calculateDataSize(qslData);
-      if (dataSize > 504) {  // NTAG215 has 504 bytes of usable memory
-        writeStatusElement.textContent = "Write Status: Failed. Data size exceeds NTAG215 capacity.";
+    const calculateDataSize = (data) => new TextEncoder().encode(JSON.stringify(data)).length;
+
+    const updateDataSize = () => {
+      const dataSize = calculateDataSize(collectQslData());
+      dataSizeElement.textContent = dataSize;
+      sizeBadge.classList.toggle("over-limit", dataSize > 504);
+    };
+
+    qslForm.addEventListener("input", updateDataSize);
+    qslForm.addEventListener("change", updateDataSize);
+
+    qslForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!canUseWebNfc) {
+        setStatus(writeStatusElement, "error", "当前无法写入", "请查看页面顶部的设备检测结果。");
         return;
       }
 
-      // Convert the data to a JSON string
+      const qslData = collectQslData();
+      const dataSize = calculateDataSize(qslData);
+      if (dataSize > 504) {
+        setStatus(writeStatusElement, "error", "数据超过容量限制", `当前为 ${dataSize} 字节，请缩短填写内容后重试。`);
+        return;
+      }
+
       const message = JSON.stringify(qslData);
+      writeButton.disabled = true;
+      setStatus(writeStatusElement, "working", "等待 NFC 卡片", "现在将卡片贴近手机背部的 NFC 感应区，并保持不动。");
 
       try {
-        writeStatusElement.textContent = "Scanning...";
         const ndef = new NDEFReader();
+        // 保持 legacy v1 的字符串写入方式，以生成原有单条 NDEF Text 记录。
         await ndef.write(message);
-        writeStatusElement.textContent = "Write Status: Success.";
+        setStatus(writeStatusElement, "success", "写入成功", `已写入 ${dataSize} 字节。可以移开卡片。`);
+        if (navigator.vibrate) navigator.vibrate(80);
       } catch (error) {
-        writeStatusElement.textContent = "Write Status: Failed.";
-        errorStatusElement.textContent = "Error: " + error.message;
+        setStatus(writeStatusElement, "error", "写入失败", describeError(error));
+      } finally {
+        writeButton.disabled = !canUseWebNfc;
       }
     });
 
-    // Scan NFC
+    const finishScanning = () => {
+      scanController = null;
+      scanButton.disabled = !canUseWebNfc;
+      cancelScanButton.hidden = true;
+    };
+
     scanButton.addEventListener("click", async () => {
-      if (isScanning) return;  // If already scanning, do nothing
+      if (scanController || !canUseWebNfc) return;
+
+      scanController = new AbortController();
+      scanButton.disabled = true;
+      cancelScanButton.hidden = false;
+      lockArea.hidden = true;
+      setStatus(scanStatusElement, "working", "正在等待卡片", "现在将卡片贴近手机背部的 NFC 感应区，并保持不动。");
 
       try {
-        isScanning = true;  // Start scanning
-        scanButton.disabled = true;  // Disable the scan button
         const ndef = new NDEFReader();
-        await ndef.scan();
-        scanStatusElement.textContent = "Scan Status: Scanning...";
 
         ndef.addEventListener("readingerror", () => {
-          scanStatusElement.textContent = "Scan Status: Failed.";
-          errorStatusElement.textContent = "Error: Tag is not NDEF.";
-          isScanning = false;  // Allow scanning again
-          scanButton.disabled = false;  // Re-enable the scan button
-        });
+          setStatus(scanStatusElement, "error", "无法读取这张卡", "标签不是有效的 NDEF 标签，或数据已经损坏。");
+          if (scanController) scanController.abort();
+          finishScanning();
+        }, { once: true });
 
-        ndef.addEventListener("reading", ({ message, serialNumber }) => {
+        ndef.addEventListener("reading", ({ message }) => {
+          // 保持 legacy v1 读取路径：解码全部记录并用两个换行符连接。
           const data = message.records.map(record => dataToString(record.data)).join("\n\n");
 
-          // Attempt to parse the JSON data
           try {
             const parsedData = JSON.parse(data);
             readDataElement.textContent = JSON.stringify(parsedData, null, 2);
+            setStatus(scanStatusElement, "success", "读取成功", "已识别卡片中的 JSON 数据，可以移开卡片。此前发行的 v1 卡片继续兼容。");
+            lockButton.disabled = false;
+            lockArea.hidden = !canLockTag;
+            if (navigator.vibrate) navigator.vibrate(80);
           } catch (error) {
-            readDataElement.textContent = "Failed to parse JSON.";
+            readDataElement.textContent = data || "卡片中没有可显示的数据。";
+            setStatus(scanStatusElement, "error", "数据不是 NFCQSL JSON", "已显示读取到的原始文本，但无法按 NFCQSL 格式解析。");
           }
 
-          scanStatusElement.textContent = "Scan Status: Success.";
-          errorStatusElement.textContent = "Error: No error.";
-          lockButton.style.display = "inline-block";  // Show lock button
+          if (scanController) scanController.abort();
+          finishScanning();
+        }, { once: true });
 
-          isScanning = false;  // Allow scanning again
-          scanButton.disabled = false;  // Re-enable the scan button
-        });
+        await ndef.scan({ signal: scanController.signal });
       } catch (error) {
-        scanStatusElement.textContent = "Scan Status: Failed.";
-        errorStatusElement.textContent = "Error: " + error.message;
-        isScanning = false;  // Allow scanning again
-        scanButton.disabled = false;  // Re-enable the scan button
+        if (error.name === "AbortError") {
+          if (scanController) {
+            setStatus(scanStatusElement, "", "读取已取消", "点击“开始读取”可以重新尝试。");
+          }
+        } else {
+          setStatus(scanStatusElement, "error", "无法开始读取", describeError(error));
+        }
+        finishScanning();
       }
     });
 
-    // Lock the card (make read-only)
+    cancelScanButton.addEventListener("click", () => {
+      if (!scanController) return;
+      scanController.abort();
+      setStatus(scanStatusElement, "", "读取已取消", "点击“开始读取”可以重新尝试。");
+      finishScanning();
+    });
+
     lockButton.addEventListener("click", async () => {
+      if (!canLockTag) return;
+      const confirmed = window.confirm("锁卡通常不可逆。确认要把刚才读取的卡片永久设为只读吗？");
+      if (!confirmed) return;
+
+      lockButton.disabled = true;
+      setStatus(scanStatusElement, "working", "等待锁定卡片", "再次将同一张卡贴近手机，并保持到操作完成。");
+
       try {
         const ndef = new NDEFReader();
         await ndef.makeReadOnly();
-        writeStatusElement.textContent = "Write Status: Card locked as read-only.";
-        lockButton.style.display = "none";  // Hide lock button after locking
+        setStatus(scanStatusElement, "success", "卡片已设为只读", "锁定完成，卡片通常无法再次写入。");
+        lockArea.hidden = true;
+        if (navigator.vibrate) navigator.vibrate([80, 50, 80]);
       } catch (error) {
-        writeStatusElement.textContent = "Write Status: Failed to lock card.";
-        errorStatusElement.textContent = "Error: " + error.message;
+        setStatus(scanStatusElement, "error", "锁卡失败", describeError(error));
+        lockButton.disabled = false;
       }
     });
-  </script>
 
+    updateSupportPanel();
+    updateDataSize();
+  </script>
 </body>
 </html>
