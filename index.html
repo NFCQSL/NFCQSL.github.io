@@ -1,35 +1,212 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>首页</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-        }
-        button {
-            padding: 15px 30px;
-            font-size: 16px;
-            margin: 10px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background-color: #4CAF50;
-            color: white;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#102a2e">
+  <meta name="description" content="NFCQSL 工具入口。">
+  <title>NFCQSL</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #173136;
+      --ink-soft: #5c6f72;
+      --paper: #fffdf8;
+      --canvas: #edf3ef;
+      --line: #d7e0dc;
+      --brand: #0b6b63;
+      --brand-dark: #07524d;
+      --brand-pale: #dff2eb;
+      --shadow: 0 20px 50px rgba(21, 54, 52, 0.09);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(233, 162, 59, 0.15), transparent 26rem),
+        linear-gradient(180deg, #f5f8f4 0%, var(--canvas) 100%);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    .page-shell {
+      width: min(980px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: clamp(24px, 7vw, 72px) 0 48px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(30px, 6vw, 64px);
+      border-radius: 30px;
+      background: #102a2e;
+      color: #f7fbf7;
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      right: -105px;
+      top: -125px;
+      border: 42px solid rgba(121, 211, 187, 0.12);
+      border-radius: 50%;
+      box-shadow: 0 0 0 42px rgba(121, 211, 187, 0.05);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #8fd9c6;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      position: relative;
+      z-index: 1;
+      margin: 0 0 14px;
+      font-size: clamp(2.8rem, 10vw, 6rem);
+      font-weight: 760;
+      letter-spacing: -0.06em;
+      line-height: 0.95;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 580px;
+      margin: 0;
+      color: #c9d9d7;
+      font-size: clamp(1rem, 2vw, 1.12rem);
+    }
+
+    .links {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .entry {
+      display: flex;
+      min-height: 210px;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(24px, 4vw, 34px);
+      border: 1px solid rgba(23, 49, 54, 0.08);
+      border-radius: 24px;
+      background: var(--paper);
+      color: var(--ink);
+      text-decoration: none;
+      box-shadow: var(--shadow);
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .entry:hover {
+      transform: translateY(-3px);
+      border-color: rgba(11, 107, 99, 0.34);
+      box-shadow: 0 24px 56px rgba(21, 54, 52, 0.13);
+    }
+
+    .entry:focus-visible {
+      outline: 3px solid rgba(233, 162, 59, 0.7);
+      outline-offset: 4px;
+    }
+
+    .entry-kicker {
+      margin: 0 0 7px;
+      color: var(--brand);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: clamp(1.45rem, 4vw, 2rem);
+      letter-spacing: -0.035em;
+    }
+
+    .entry-description {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+    }
+
+    .entry-action {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 28px;
+      color: var(--brand-dark);
+      font-size: 0.88rem;
+      font-weight: 760;
+    }
+
+    .entry-action::after {
+      content: "→";
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--brand-pale);
+      transition: transform 160ms ease;
+    }
+
+    .entry:hover .entry-action::after { transform: translateX(3px); }
+
+    @media (max-width: 620px) {
+      .page-shell { width: min(100% - 20px, 980px); padding: 10px 0 30px; }
+      .hero { padding: 32px 22px; border-radius: 22px; }
+      .links { grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
+      .entry { min-height: 170px; padding: 24px 20px; border-radius: 18px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
 </head>
 <body>
-    <h1>?</h1>
-    <div>
-        <button onclick="window.location.href='./nfcqsl/index.html';">跳转到 NFCQSL</button>
-        <button onclick="window.location.href='./award/index.html';">跳转到 WTF_Award</button>
-    </div>
+  <main class="page-shell">
+    <header class="hero">
+      <p class="eyebrow">NFC · QSL</p>
+      <h1>NFCQSL</h1>
+      <p class="hero-copy">业余无线电工具与活动入口。</p>
+    </header>
+
+    <nav class="links" aria-label="站点功能">
+      <a class="entry" href="./nfcqsl/index.html">
+        <div>
+          <p class="entry-kicker">NFC Tool</p>
+          <h2>NFCQSL 卡片</h2>
+          <p class="entry-description">读取、写入并确认 NFC QSL 卡片中的联络信息。</p>
+        </div>
+        <span class="entry-action">打开读写工具</span>
+      </a>
+
+      <a class="entry" href="./award/index.html">
+        <div>
+          <p class="entry-kicker">Award</p>
+          <h2>WTF Award</h2>
+          <p class="entry-description">查看活动介绍和相关信息。</p>
+        </div>
+        <span class="entry-action">进入活动页面</span>
+      </a>
+    </nav>
+  </main>
 </body>
 </html>

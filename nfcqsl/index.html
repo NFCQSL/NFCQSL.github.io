@@ -418,6 +418,7 @@
     }
 
     .lock-note { margin: 12px 2px 0; color: var(--danger); font-size: 0.78rem; }
+    .lock-status { margin-top: 10px; }
 
     .locked-confirmation {
       margin-top: 14px;
@@ -489,7 +490,7 @@
           <div>
             <p class="card-kicker">Read</p>
             <h2>读取 QSL 卡</h2>
-            <p class="card-description">兼容此前发行的 NFCQSL legacy v1 卡片。</p>
+            <p class="card-description">读取已经发行或刚刚写入的 NFCQSL 卡片。</p>
           </div>
         </div>
 
@@ -514,7 +515,10 @@
 
         <div id="lockArea" hidden>
           <button class="button danger" id="lockButton" type="button">确认数据无误，将卡设为只读</button>
-          <p class="lock-note">锁卡通常不可逆。点击后还需要再次将同一张卡贴近手机。</p>
+          <p class="lock-note">锁卡通常不可逆。点击按钮会立即开始等待，请再将同一张卡贴近手机。</p>
+          <div class="operation-status lock-status" id="lockStatus" role="status" aria-live="assertive" hidden>
+            <strong>准备锁卡</strong><span>点击上方按钮后，再贴卡。</span>
+          </div>
         </div>
         <div class="locked-confirmation" id="lockedConfirmation" role="status" hidden>已锁定：本页面已确认该卡成功设为只读。</div>
       </article>
@@ -595,7 +599,7 @@
 
     </section>
 
-    <p class="footer-note">NFCQSL legacy v1 · Web NFC 需要 HTTPS、安全的顶层页面和用户授权</p>
+    <p class="footer-note">Web NFC 需要 HTTPS、安全的顶层页面和用户授权</p>
   </main>
 
   <script>
@@ -605,6 +609,7 @@
     const cancelScanButton = document.getElementById("cancelScanButton");
     const lockButton = document.getElementById("lockButton");
     const lockArea = document.getElementById("lockArea");
+    const lockStatusElement = document.getElementById("lockStatus");
     const writeStatusElement = document.getElementById("writeStatus");
     const scanStatusElement = document.getElementById("scanStatus");
     const readDataElement = document.getElementById("readData");
@@ -799,6 +804,7 @@
       scanButton.disabled = true;
       cancelScanButton.hidden = false;
       lockArea.hidden = true;
+      lockStatusElement.hidden = true;
       lockedConfirmation.hidden = true;
       setStatus(scanStatusElement, "working", "正在等待卡片", "现在将卡片贴近手机背部的 NFC 感应区，并保持不动。");
 
@@ -820,8 +826,10 @@
             renderReadableData(parsedData);
             readDataElement.textContent = JSON.stringify(parsedData, null, 2);
             showResultView("readable");
-            setStatus(scanStatusElement, "success", "读取成功", "已识别卡片中的 JSON 数据，可以移开卡片。此前发行的 v1 卡片继续兼容。");
+            setStatus(scanStatusElement, "success", "读取成功", "已识别卡片中的 JSON 数据，可以移开卡片。确认内容后可选择锁卡。");
             lockButton.disabled = false;
+            lockButton.textContent = "确认数据无误，将卡设为只读";
+            lockStatusElement.hidden = true;
             lockArea.hidden = !canLockTag;
             if (navigator.vibrate) navigator.vibrate(80);
           } catch (error) {
@@ -856,22 +864,28 @@
 
     lockButton.addEventListener("click", async () => {
       if (!canLockTag) return;
-      const confirmed = window.confirm("锁卡通常不可逆。确认要把刚才读取的卡片永久设为只读吗？");
-      if (!confirmed) return;
-
       lockButton.disabled = true;
-      setStatus(scanStatusElement, "working", "等待锁定卡片", "再次将同一张卡贴近手机，并保持到操作完成。");
+      scanButton.disabled = true;
+      writeButton.disabled = true;
+      lockButton.textContent = "正在等待卡片…";
+      lockStatusElement.hidden = false;
+      setStatus(lockStatusElement, "working", "等待锁定卡片", "现在将刚才读取的同一张卡贴近手机，并保持不动。");
 
       try {
         const ndef = new NDEFReader();
         await ndef.makeReadOnly();
-        setStatus(scanStatusElement, "success", "卡片已设为只读", "锁定完成，卡片通常无法再次写入。");
+        setStatus(lockStatusElement, "success", "锁卡成功", "卡片已设为只读，通常无法再次写入。现在可以移开卡片。");
         lockArea.hidden = true;
         lockedConfirmation.hidden = false;
+        scanButton.disabled = !canUseWebNfc;
+        writeButton.disabled = !canUseWebNfc;
         if (navigator.vibrate) navigator.vibrate([80, 50, 80]);
       } catch (error) {
-        setStatus(scanStatusElement, "error", "锁卡失败", describeError(error));
+        setStatus(lockStatusElement, "error", "锁卡失败", describeError(error));
         lockButton.disabled = false;
+        lockButton.textContent = "重新尝试锁卡";
+        scanButton.disabled = !canUseWebNfc;
+        writeButton.disabled = !canUseWebNfc;
       }
     });
 
