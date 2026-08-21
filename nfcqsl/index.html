@@ -187,7 +187,7 @@
 
     .workspace {
       display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.75fr);
+      grid-template-columns: minmax(360px, 0.9fr) minmax(0, 1.1fr);
       gap: 18px;
       align-items: start;
     }
@@ -338,14 +338,78 @@
 
     .read-card { position: sticky; top: 18px; }
 
+    .result-panel {
+      margin-top: 18px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .result-toolbar {
+      display: flex;
+      gap: 4px;
+      padding: 5px;
+      border-bottom: 1px solid var(--line);
+      background: #f1f5f2;
+    }
+
+    .view-tab {
+      min-height: 36px;
+      padding: 7px 13px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--ink-soft);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 720;
+    }
+
+    .view-tab[aria-selected="true"] {
+      background: #fff;
+      color: var(--brand-dark);
+      box-shadow: 0 1px 4px rgba(21, 54, 52, 0.1);
+    }
+
+    .readable-data {
+      min-height: 220px;
+      padding: 8px 18px;
+    }
+
+    .data-list { margin: 0; }
+
+    .data-row {
+      display: grid;
+      grid-template-columns: minmax(94px, 0.36fr) minmax(0, 0.64fr);
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid #e9eeeb;
+    }
+
+    .data-row:last-child { border-bottom: 0; }
+    .data-row dt { color: var(--ink-soft); font-size: 0.8rem; }
+    .data-row dd { margin: 0; color: var(--ink); font-size: 0.92rem; font-weight: 680; overflow-wrap: anywhere; }
+    .data-row dd.empty-value { color: #9aa7a7; font-weight: 500; }
+
+    .empty-result {
+      display: grid;
+      min-height: 204px;
+      place-items: center;
+      margin: 0;
+      color: #829093;
+      font-size: 0.88rem;
+      text-align: center;
+    }
+
     .read-output {
       min-height: 220px;
       max-height: 480px;
-      margin: 18px 0 0;
+      margin: 0;
       padding: 16px;
       overflow: auto;
-      border: 1px solid var(--line);
-      border-radius: 12px;
+      border: 0;
+      border-radius: 0;
       background: #13272a;
       color: #d9ebe6;
       font: 0.82rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -354,6 +418,17 @@
     }
 
     .lock-note { margin: 12px 2px 0; color: var(--danger); font-size: 0.78rem; }
+
+    .locked-confirmation {
+      margin-top: 14px;
+      padding: 13px 14px;
+      border: 1px solid #b9dfca;
+      border-radius: 11px;
+      background: var(--success-pale);
+      color: var(--success);
+      font-size: 0.88rem;
+      font-weight: 750;
+    }
     .footer-note { margin: 22px 0 0; color: #748487; font-size: 0.78rem; text-align: center; }
     [hidden] { display: none !important; }
 
@@ -388,7 +463,7 @@
     <header class="hero">
       <div>
         <p class="eyebrow">NFC · QSL</p>
-        <h1>一碰，交换空中相遇。</h1>
+        <h1>NFCQSL</h1>
         <p class="hero-copy">为 NFCQSL 卡写入联络信息，或读取已经发行的卡片。所有数据只在当前设备与 NFC 标签之间处理。</p>
       </div>
 
@@ -409,7 +484,42 @@
     </section>
 
     <section class="workspace">
-      <article class="card">
+      <article class="card read-card">
+        <div class="card-header">
+          <div>
+            <p class="card-kicker">Read</p>
+            <h2>读取 QSL 卡</h2>
+            <p class="card-description">兼容此前发行的 NFCQSL legacy v1 卡片。</p>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="button" id="scanButton" type="button">开始读取</button>
+          <button class="button secondary" id="cancelScanButton" type="button" hidden>取消</button>
+        </div>
+        <div class="operation-status" id="scanStatus" role="status" aria-live="polite">
+          <strong>尚未读取</strong><span>点击按钮后，再将卡贴近手机 NFC 感应区。</span>
+        </div>
+
+        <div class="result-panel">
+          <div class="result-toolbar" role="tablist" aria-label="读取结果显示方式">
+            <button class="view-tab" id="readableTab" type="button" role="tab" aria-selected="true" aria-controls="readableData">易读信息</button>
+            <button class="view-tab" id="jsonTab" type="button" role="tab" aria-selected="false" aria-controls="readData">JSON</button>
+          </div>
+          <div class="readable-data" id="readableData" role="tabpanel" aria-labelledby="readableTab">
+            <p class="empty-result">等待读取卡片…</p>
+          </div>
+          <pre class="read-output" id="readData" role="tabpanel" aria-labelledby="jsonTab" hidden>等待读取卡片…</pre>
+        </div>
+
+        <div id="lockArea" hidden>
+          <button class="button danger" id="lockButton" type="button">确认数据无误，将卡设为只读</button>
+          <p class="lock-note">锁卡通常不可逆。点击后还需要再次将同一张卡贴近手机。</p>
+        </div>
+        <div class="locked-confirmation" id="lockedConfirmation" role="status" hidden>已锁定：本页面已确认该卡成功设为只读。</div>
+      </article>
+
+      <article class="card write-card">
         <div class="card-header">
           <div>
             <p class="card-kicker">Write</p>
@@ -450,28 +560,28 @@
               <input type="text" id="freq" placeholder="14.270" inputmode="decimal" autocomplete="off">
             </div>
             <div class="field">
-              <label for="rst">RST <span class="example">例如 59</span></label>
-              <input type="text" id="rst" placeholder="59" autocomplete="off">
+              <label for="rst">RST <span class="example">原版提示</span></label>
+              <input type="text" id="rst" placeholder="你的信号59+,呼号再过来一遍" autocomplete="off">
             </div>
             <div class="field">
-              <label for="rig">设备 RIG <span class="example">例如 IC-705</span></label>
-              <input type="text" id="rig" placeholder="IC-705" autocomplete="off">
+              <label for="rig">设备 RIG <span class="example">原版提示</span></label>
+              <input type="text" id="rig" placeholder="火花发射机" autocomplete="off">
             </div>
             <div class="field">
-              <label for="pwr">功率 PWR <span class="example">例如 10W</span></label>
-              <input type="text" id="pwr" placeholder="10W" autocomplete="off">
+              <label for="pwr">功率 PWR <span class="example">🐢 = 硅 PA</span></label>
+              <input type="text" id="pwr" placeholder="🐢" autocomplete="off">
             </div>
             <div class="field">
-              <label for="ant">天线 ANT <span class="example">例如 Dipole</span></label>
-              <input type="text" id="ant" placeholder="Dipole" autocomplete="off">
+              <label for="ant">天线 ANT <span class="example">原版提示</span></label>
+              <input type="text" id="ant" placeholder="长线加天调" autocomplete="off">
             </div>
             <div class="field">
               <label for="qth">位置 QTH <span class="example">城市或网格</span></label>
               <input type="text" id="qth" placeholder="Beijing / OM89" autocomplete="off">
             </div>
             <div class="field full">
-              <label for="op">操作员 OP <span class="example">姓名或昵称</span></label>
-              <input type="text" id="op" placeholder="Operator" autocomplete="off">
+              <label for="op">操作员 OP <span class="example">原版提示</span></label>
+              <input type="text" id="op" placeholder="新人，A类考试没报上" autocomplete="off">
             </div>
           </div>
 
@@ -483,28 +593,6 @@
         </form>
       </article>
 
-      <article class="card read-card">
-        <div class="card-header">
-          <div>
-            <p class="card-kicker">Read</p>
-            <h2>读取 QSL 卡</h2>
-            <p class="card-description">兼容此前发行的 NFCQSL legacy v1 卡片。</p>
-          </div>
-        </div>
-
-        <div class="action-row">
-          <button class="button" id="scanButton" type="button">开始读取</button>
-          <button class="button secondary" id="cancelScanButton" type="button" hidden>取消</button>
-        </div>
-        <div class="operation-status" id="scanStatus" role="status" aria-live="polite">
-          <strong>尚未读取</strong><span>点击按钮后，再将卡贴近手机 NFC 感应区。</span>
-        </div>
-        <pre class="read-output" id="readData" aria-label="读取到的卡片数据">等待读取卡片…</pre>
-        <div id="lockArea" hidden>
-          <button class="button danger" id="lockButton" type="button">确认数据无误，将卡设为只读</button>
-          <p class="lock-note">锁卡通常不可逆。点击后还需要再次将同一张卡贴近手机。</p>
-        </div>
-      </article>
     </section>
 
     <p class="footer-note">NFCQSL legacy v1 · Web NFC 需要 HTTPS、安全的顶层页面和用户授权</p>
@@ -520,6 +608,10 @@
     const writeStatusElement = document.getElementById("writeStatus");
     const scanStatusElement = document.getElementById("scanStatus");
     const readDataElement = document.getElementById("readData");
+    const readableDataElement = document.getElementById("readableData");
+    const readableTab = document.getElementById("readableTab");
+    const jsonTab = document.getElementById("jsonTab");
+    const lockedConfirmation = document.getElementById("lockedConfirmation");
     const supportPanel = document.getElementById("supportPanel");
     const supportTitle = document.getElementById("supportTitle");
     const supportDetail = document.getElementById("supportDetail");
@@ -536,6 +628,71 @@
       element.querySelector("strong").textContent = title;
       element.querySelector("span").textContent = detail;
     };
+
+    const qslFieldLabels = {
+      cfm: "确认类型",
+      toRadio: "对方呼号",
+      date: "日期",
+      time: "时间",
+      freq: "频率（MHz）",
+      mode: "模式",
+      rst: "RST",
+      rig: "设备 RIG",
+      pwr: "功率 PWR",
+      ant: "天线 ANT",
+      qth: "位置 QTH",
+      op: "操作员 OP"
+    };
+
+    const showResultView = (view) => {
+      const showReadable = view === "readable";
+      readableDataElement.hidden = !showReadable;
+      readDataElement.hidden = showReadable;
+      readableTab.setAttribute("aria-selected", String(showReadable));
+      jsonTab.setAttribute("aria-selected", String(!showReadable));
+    };
+
+    const renderReadableData = (parsedData) => {
+      const dataList = document.createElement("dl");
+      dataList.className = "data-list";
+
+      const isObject = parsedData !== null && typeof parsedData === "object" && !Array.isArray(parsedData);
+      const standardKeys = Object.keys(qslFieldLabels);
+      const hasStandardFields = isObject && standardKeys.some(key => Object.prototype.hasOwnProperty.call(parsedData, key));
+      let entries;
+
+      if (hasStandardFields) {
+        const extraKeys = Object.keys(parsedData).filter(key => !standardKeys.includes(key));
+        entries = [...standardKeys, ...extraKeys].map(key => [key, parsedData[key]]);
+      } else if (isObject || Array.isArray(parsedData)) {
+        entries = Object.entries(parsedData);
+      } else {
+        entries = [["value", parsedData]];
+      }
+
+      entries.forEach(([key, value]) => {
+        const row = document.createElement("div");
+        const term = document.createElement("dt");
+        const description = document.createElement("dd");
+        const isEmpty = value === "" || value === null || value === undefined;
+
+        row.className = "data-row";
+        term.textContent = qslFieldLabels[key] || key;
+        description.textContent = isEmpty
+          ? "未填写"
+          : typeof value === "object"
+            ? JSON.stringify(value)
+            : String(value);
+        description.classList.toggle("empty-value", isEmpty);
+        row.append(term, description);
+        dataList.append(row);
+      });
+
+      readableDataElement.replaceChildren(dataList);
+    };
+
+    readableTab.addEventListener("click", () => showResultView("readable"));
+    jsonTab.addEventListener("click", () => showResultView("json"));
 
     const describeError = (error) => {
       const messages = {
@@ -620,7 +777,7 @@
         const ndef = new NDEFReader();
         // 保持 legacy v1 的字符串写入方式，以生成原有单条 NDEF Text 记录。
         await ndef.write(message);
-        setStatus(writeStatusElement, "success", "写入成功", `已写入 ${dataSize} 字节。可以移开卡片。`);
+        setStatus(writeStatusElement, "success", "写入成功", `已写入 ${dataSize} 字节。请移开卡片，再到读取区试读；确认内容后可在读取区锁卡。`);
         if (navigator.vibrate) navigator.vibrate(80);
       } catch (error) {
         setStatus(writeStatusElement, "error", "写入失败", describeError(error));
@@ -642,6 +799,7 @@
       scanButton.disabled = true;
       cancelScanButton.hidden = false;
       lockArea.hidden = true;
+      lockedConfirmation.hidden = true;
       setStatus(scanStatusElement, "working", "正在等待卡片", "现在将卡片贴近手机背部的 NFC 感应区，并保持不动。");
 
       try {
@@ -659,13 +817,16 @@
 
           try {
             const parsedData = JSON.parse(data);
+            renderReadableData(parsedData);
             readDataElement.textContent = JSON.stringify(parsedData, null, 2);
+            showResultView("readable");
             setStatus(scanStatusElement, "success", "读取成功", "已识别卡片中的 JSON 数据，可以移开卡片。此前发行的 v1 卡片继续兼容。");
             lockButton.disabled = false;
             lockArea.hidden = !canLockTag;
             if (navigator.vibrate) navigator.vibrate(80);
           } catch (error) {
             readDataElement.textContent = data || "卡片中没有可显示的数据。";
+            showResultView("json");
             setStatus(scanStatusElement, "error", "数据不是 NFCQSL JSON", "已显示读取到的原始文本，但无法按 NFCQSL 格式解析。");
           }
 
@@ -706,6 +867,7 @@
         await ndef.makeReadOnly();
         setStatus(scanStatusElement, "success", "卡片已设为只读", "锁定完成，卡片通常无法再次写入。");
         lockArea.hidden = true;
+        lockedConfirmation.hidden = false;
         if (navigator.vibrate) navigator.vibrate([80, 50, 80]);
       } catch (error) {
         setStatus(scanStatusElement, "error", "锁卡失败", describeError(error));
